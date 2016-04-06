@@ -10,7 +10,7 @@ var routes = require('./routes/index');
 var users = require('./routes/users');
 var passport = require('passport');
 require('dotenv').load();
-
+var cookieSession = require('cookie-session');
 var app = express();
 
 // view engine setup
@@ -22,6 +22,7 @@ passport.use(new LinkedInStrategy({
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
   callbackURL: process.env.HOST + "/auth/linkedin/callback",
   scope: ['r_emailaddress', 'r_basicprofile'],
+  state: true,
 }, function(accessToken, refreshToken, profile, done) {
   // asynchronous verification, for effect...
   process.nextTick(function () {
@@ -46,13 +47,18 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.suer(cookieSession({
+  name: 'session',
+  keys: [process.env.SESSION_KEY]
+}));
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(passport.initialize());
 
 app.use('/', routes);
 app.use('/users', users);
 
-app.get('/auth/linkedin', passport.authenticate('linkedin', { state: 'SOME STATE'  }));
+app.get('/auth/linkedin', passport.authenticate('linkedin'));
 
 app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
   successRedirect: '/',
